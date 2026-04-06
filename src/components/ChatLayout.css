@@ -311,3 +311,69 @@
 .send-btn:active {
   transform: scale(0.95);
 }
+
+/* Mobile Responsive Overrides */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  margin-right: 16px;
+  cursor: pointer;
+  align-items: center;
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 90;
+  transition: opacity 0.3s;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+  
+  .sidebar, .channel-bar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .sidebar {
+    left: 0;
+    transform: translateX(-100%);
+  }
+  
+  .channel-bar {
+    left: 0;
+    margin-left: 72px; /* Offset to sit right of sidebar */
+    transform: translateX(calc(-100% - 72px));
+    box-shadow: 4px 0 8px rgba(0,0,0,0.2);
+  }
+  
+  .chat-layout.mobile-menu-open .sidebar {
+    transform: translateX(0);
+  }
+  
+  .chat-layout.mobile-menu-open .channel-bar {
+    transform: translateX(0);
+  }
+  
+  .chat-layout.mobile-menu-open .mobile-overlay {
+    display: block;
+  }
+  
+  /* Make sure chat area takes full width on mobile */
+  .chat-area {
+    width: 100vw;
+  }
+}

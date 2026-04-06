@@ -13,6 +13,7 @@ const channelsData = {
 const ChatLayout = () => {
   const [currentServer, setCurrentServer] = useState({ id: 'server1', name: 'Friend Circle' });
   const [currentChannel, setCurrentChannel] = useState({ id: 'general', name: 'general', type: 'channel' });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // When server changes, automatically select its first channel
   useEffect(() => {
@@ -23,16 +24,32 @@ const ChatLayout = () => {
     }
   }, [currentServer.id]);
 
+  useEffect(() => {
+    // Request notification permissions for new messages
+    if ("Notification" in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   return (
-    <div className="chat-layout">
+    <div className={`chat-layout ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
       <Sidebar currentServer={currentServer} setCurrentServer={setCurrentServer} />
       <ChannelBar 
         currentChannel={currentChannel} 
-        setCurrentChannel={setCurrentChannel} 
+        setCurrentChannel={(channel) => {
+          setCurrentChannel(channel);
+          setIsMobileMenuOpen(false); // Close mobile drawer when channel selected
+        }} 
         currentServer={currentServer}
         channelsData={channelsData}
       />
-      <ChatArea currentChannel={currentChannel} />
+      <ChatArea 
+        currentChannel={currentChannel} 
+        toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      />
     </div>
   );
 };

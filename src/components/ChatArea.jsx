@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Hash, MessageSquare, Send } from 'lucide-react';
+import { Hash, MessageSquare, Send, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where } from 'firebase/firestore';
 
-const ChatArea = ({ currentChannel }) => {
+const ChatArea = ({ currentChannel, toggleMobileMenu }) => {
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [firebaseError, setFirebaseError] = useState(null);
   const messagesEndRef = useRef(null);
+  const isInitialLoad = useRef(true);
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -24,7 +25,9 @@ const ChatArea = ({ currentChannel }) => {
   useEffect(() => {
     if (!currentChannel?.id) return;
     
-    // Create a query against the collection, focusing on the current channel.
+    // Reset initial load flag when channel switches
+    isInitialLoad.current = true;
+
     const q = query(
       collection(db, 'messages'),
       where('channelId', '==', currentChannel.id),
@@ -33,7 +36,30 @@ const ChatArea = ({ currentChannel }) => {
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setFirebaseError(null);
+      
+      // Handle notifications
+      if (!isInitialLoad.current && "Notification" in window && Notification.permission === "granted") {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const data = change.doc.data();
+            if (data.userId !== currentUser.uid) {
+              new Notification(`New message in #${currentChannel.name}`, {
+                body: `${data.userName}: ${data.text}`,
+                icon: '/pwa-192x192.png'
+              });
+              
+              // Optional: Play a short ping sound (needs an audio file, or audio synthesis)
+              try {
+                const audio = new Audio('https://www.myinstants.com/media/sounds/discord-notification.mp3');
+                audio.play().catch(e => console.log('Audio blocked by browser'));
+              } catch (e) {}
+            }
+          }
+        });
+      }
+      
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      isInitialLoad.current = false;
     }, (error) => {
       console.error("Firestore onSnapshot error:", error);
       setFirebaseError(error.message);
@@ -71,6 +97,9 @@ const ChatArea = ({ currentChannel }) => {
   return (
     <div className="chat-area">
       <div className="chat-header">
+        <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
+          <Menu size={24} />
+        </button>
         {currentChannel.type === 'channel' ? (
           <Hash size={24} color="var(--text-muted)" />
         ) : (
